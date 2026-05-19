@@ -1,0 +1,6 @@
+{
+  "name": "MirrorMind AI",
+  "description": "An immersive AI + AR beauty and fashion transformation platform.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
