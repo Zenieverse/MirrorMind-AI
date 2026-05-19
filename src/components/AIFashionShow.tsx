@@ -3,15 +3,24 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Sparkles, Download, Share2, RefreshCcw, Star, Zap, ShoppingBag } from 'lucide-react';
 import { AestheticMood } from '@/src/types';
 import { PRODUCTS } from '@/src/constants';
+import { cn } from '@/src/lib/utils';
 
 interface AIFashionShowProps {
   mood: AestheticMood;
   userName?: string;
+  onAction?: (message: string, type: 'success' | 'info') => void;
 }
 
-export const AIFashionShow: React.FC<AIFashionShowProps> = ({ mood }) => {
+export const AIFashionShow: React.FC<AIFashionShowProps> = ({ mood, onAction }) => {
   const [isGenerating, setIsGenerating] = useState(true);
   const [previews, setPreviews] = useState<string[]>([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  const LOOK_TITLES = [
+    'Volumetric Refinement',
+    'Neural Synthesis',
+    'Aetheric Projection',
+  ];
 
   useEffect(() => {
     // Simulation of AI generation
@@ -26,6 +35,24 @@ export const AIFashionShow: React.FC<AIFashionShowProps> = ({ mood }) => {
     return () => clearTimeout(timer);
   }, [mood]);
 
+  const handlePurchase = (name: string) => {
+    onAction?.(`${name} Added to Registry`, 'success');
+  };
+
+  const handleBundle = () => {
+    onAction?.(`Bundle ${mood} Initialized for Delivery`, 'success');
+  };
+
+  const handleExport = () => {
+    onAction?.('Exporting Neural Lookbook...', 'info');
+  };
+
+  const handleRegenerate = () => {
+    setIsGenerating(true);
+    setTimeout(() => setIsGenerating(false), 2000);
+    onAction?.('Recalibrating Synthesis Engine', 'info');
+  };
+
   return (
     <div className="space-y-16 pb-20 pt-16">
       <div className="flex flex-col md:flex-row justify-between items-end gap-10 border-b border-white/10 pb-12">
@@ -38,10 +65,16 @@ export const AIFashionShow: React.FC<AIFashionShowProps> = ({ mood }) => {
              </h2>
         </div>
         <div className="flex gap-4">
-            <button className="px-8 py-4 glass-panel border-white/20 text-[10px] tracking-widest uppercase hover:bg-white/10 transition-all">
+            <button 
+              onClick={() => onAction?.('Registry Accessed', 'info')}
+              className="px-8 py-4 glass-panel border-white/20 text-[10px] tracking-widest uppercase hover:bg-white/10 transition-all"
+            >
                 Registry
             </button>
-            <button className="px-8 py-4 bg-white text-luxury-black font-black text-[10px] tracking-widest uppercase hover:bg-electric-blue hover:text-white transition-all">
+            <button 
+              onClick={handleExport}
+              className="px-8 py-4 bg-white text-luxury-black font-black text-[10px] tracking-widest uppercase hover:bg-electric-blue hover:text-white transition-all"
+            >
                 Export Data
             </button>
         </div>
@@ -83,17 +116,38 @@ export const AIFashionShow: React.FC<AIFashionShowProps> = ({ mood }) => {
                         transition={{ duration: 1.5 }}
                         className="w-full h-full relative"
                     >
-                        <img 
-                            src={previews[0]} 
-                            alt="Fashion Result" 
-                            className="w-full h-full object-cover grayscale-[0.2] transition-all duration-2000 group-hover:scale-105 group-hover:grayscale-0" 
-                        />
+                        <AnimatePresence mode="wait">
+                          <motion.img 
+                              key={currentIndex}
+                              initial={{ opacity: 0, scale: 1.05 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              exit={{ opacity: 0, scale: 0.95 }}
+                              transition={{ duration: 0.8 }}
+                              src={previews[currentIndex]} 
+                              alt="Fashion Result" 
+                              className="w-full h-full object-cover grayscale-[0.2] group-hover:grayscale-0 transition-grayscale duration-1000" 
+                          />
+                        </AnimatePresence>
+                        
                         <div className="absolute inset-0 bg-gradient-to-t from-luxury-black via-transparent to-transparent opacity-80" />
                         
                         <div className="absolute bottom-16 left-16 right-16 flex justify-between items-end">
                              <div className="space-y-4">
-                                <span className="text-[10px] tracking-[0.6em] uppercase text-white/30 font-bold">Sequence-001</span>
-                                <h4 className="text-5xl font-light tracking-tighter uppercase leading-none">Volumetric <br/><span className="font-black italic">Refinement</span></h4>
+                                <span className="text-[10px] tracking-[0.6em] uppercase text-white/30 font-bold">Sequence-00{currentIndex + 1}</span>
+                                <h4 className="text-5xl font-light tracking-tighter uppercase leading-none">{LOOK_TITLES[currentIndex].split(' ')[0]} <br/><span className="font-black italic">{LOOK_TITLES[currentIndex].split(' ')[1]}</span></h4>
+                             </div>
+                             
+                             <div className="flex gap-4 mb-2">
+                                {previews.map((_, i) => (
+                                  <button 
+                                    key={i} 
+                                    onClick={() => setCurrentIndex(i)}
+                                    className={cn(
+                                      "w-12 h-1 transition-all",
+                                      i === currentIndex ? "bg-neon-purple w-20" : "bg-white/20 hover:bg-white/40"
+                                    )}
+                                  />
+                                ))}
                              </div>
                         </div>
                         
@@ -122,7 +176,10 @@ export const AIFashionShow: React.FC<AIFashionShowProps> = ({ mood }) => {
                         <span className="text-xs font-mono uppercase tracking-tighter">Atmospheric</span>
                     </div>
                 </div>
-                <button className="w-full py-5 border border-white/10 text-[9px] tracking-[0.3em] uppercase font-black hover:bg-white/5 transition-all">
+                <button 
+                  onClick={handleRegenerate}
+                  className="w-full py-5 border border-white/10 text-[9px] tracking-[0.3em] uppercase font-black hover:bg-white/5 transition-all"
+                >
                     Re-Synthesize Logic
                 </button>
             </div>
@@ -134,7 +191,10 @@ export const AIFashionShow: React.FC<AIFashionShowProps> = ({ mood }) => {
                     Exceptional alignment with core structural profile.
                 </p>
                 <div className="mt-12 pt-10 border-t border-white/10">
-                    <button className="w-full py-5 bg-white text-luxury-black font-black text-[10px] tracking-[0.3em] uppercase hover:bg-neon-purple hover:text-white transition-all">
+                    <button 
+                      onClick={handleBundle}
+                      className="w-full py-5 bg-white text-luxury-black font-black text-[10px] tracking-[0.3em] uppercase hover:bg-neon-purple hover:text-white transition-all"
+                    >
                         Acquire Bundle
                     </button>
                 </div>
@@ -165,7 +225,10 @@ export const AIFashionShow: React.FC<AIFashionShowProps> = ({ mood }) => {
                         <p className="text-[10px] uppercase tracking-widest text-white/40">{product.brand}</p>
                         <h5 className="font-bold">{product.name}</h5>
                     </div>
-                    <button className="w-full p-2 bg-white/5 border border-white/5 rounded-xl hover:bg-white/10 transition-colors text-xs font-bold uppercase tracking-widest">
+                    <button 
+                      onClick={() => handlePurchase(product.name)}
+                      className="w-full p-2 bg-white/5 border border-white/5 rounded-xl hover:bg-white/10 transition-colors text-xs font-bold uppercase tracking-widest"
+                    >
                         Purchase
                     </button>
                 </motion.div>

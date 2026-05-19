@@ -22,31 +22,32 @@ async function startServer() {
     const { image, mood } = req.body;
     
     try {
-      const genAI = new GoogleGenAI(process.env.GEMINI_API_KEY || "");
-      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+      const ai = new GoogleGenAI({
+        apiKey: process.env.GEMINI_API_KEY || "",
+        httpOptions: { headers: { 'User-Agent': 'aistudio-build' } }
+      });
 
       const prompt = `
         Analyze this user profile for the "${mood}" aesthetic.
         User wants a total identity transformation.
         Provide:
-        1. Skin analysis summary (comment on hydration, brightness based on the context of this aesthetic).
-        2. Beauty points (what to enhance).
-        3. A "Future You" projection (what they would look like).
-        4. Color palette recommendation.
+        1. Skin analysis summary.
+        2. Beauty points to enhance.
+        3. A "Future You" projection.
+        4. Color palette recommendation hex codes.
         
-        Keep it luxury, professional, and encouraging. Return JSON format.
+        Return JSON format.
       `;
 
-      // In a real app, we'd pass the image to Gemini Vision.
-      // For this demo, we'll generate structured AI insights.
-      const result = await model.generateContent([prompt]);
-      const response = await result.response;
-      let text = response.text();
+      const response = await ai.models.generateContent({
+        model: "gemini-3-flash-preview",
+        contents: prompt
+      });
       
-      // Basic cleaning if model returns markdown
-      text = text.replace(/```json|```/g, "");
+      const text = response.text || "{}";
+      const cleanedJson = text.replace(/```json|```/g, "").trim();
       
-      res.json(JSON.parse(text));
+      res.json(JSON.parse(cleanedJson));
     } catch (error) {
       console.error(error);
       // Fallback data for demo mode
@@ -88,16 +89,21 @@ async function startServer() {
     const { mood, features } = req.body;
     
     try {
-      const genAI = new GoogleGenAI(process.env.GEMINI_API_KEY || "");
-      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+      const ai = new GoogleGenAI({
+        apiKey: process.env.GEMINI_API_KEY || "",
+        httpOptions: { headers: { 'User-Agent': 'aistudio-build' } }
+      });
 
       const prompt = `Generate a high-end fashion editorial prompt for an AI image generator. 
       Subject: A person with ${features}. 
       Style: ${mood}. 
       Vibe: Cinematic, luxury, photorealistic, 8k, futuristic.`;
 
-      const result = await model.generateContent(prompt);
-      res.json({ prompt: result.response.text() });
+      const response = await ai.models.generateContent({
+        model: "gemini-3-flash-preview",
+        contents: prompt
+      });
+      res.json({ prompt: response.text });
     } catch (e) {
       res.json({ prompt: "Cinematic luxury portrait, high fashion, professional lighting." });
     }

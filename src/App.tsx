@@ -1,15 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Scan, 
   Sparkles, 
   LayoutDashboard, 
   Palette, 
-  UserCircle, 
   ChevronRight,
   Zap,
-  Star,
-  Globe
+  Globe,
+  Bell
 } from 'lucide-react';
 import { CameraScanner } from './components/CameraScanner.tsx';
 import { SkinDashboard } from './components/SkinDashboard.tsx';
@@ -27,10 +26,17 @@ export default function App() {
   const [isScanning, setIsScanning] = useState(false);
   const [analysisData, setAnalysisData] = useState<SkinAnalysis | null>(null);
   const [selectedMood, setSelectedMood] = useState<AestheticMood | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'info' } | null>(null);
+
+  const showToast = useCallback((message: string, type: 'success' | 'info' = 'info') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  }, []);
 
   const startAnalysis = async (image: string) => {
     setUserImage(image);
     setIsScanning(true);
+    showToast('Initializing Biometric Link...', 'info');
     
     // Simulate API call to Perfect Corp / Backend
     try {
@@ -45,10 +51,14 @@ export default function App() {
             setAnalysisData(data);
             setIsScanning(false);
             setState('analysis');
+            showToast('Dermal Mapping Complete', 'success');
         }, 3000);
     } catch (e) {
-        setIsScanning(false);
-        setState('analysis'); // Fallback to demo data
+        setTimeout(() => {
+          setIsScanning(false);
+          setState('analysis'); // Fallback to demo data
+          showToast('Using Neural Proxy Baseline', 'info');
+        }, 2000);
     }
   };
 
@@ -356,9 +366,9 @@ export default function App() {
                 key="studio"
                 initial={{ opacity: 0, y: 50 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="max-w-7xl mx-auto px-8 pb-24"
+                className="max-w-[1440px] mx-auto px-10 pb-24"
             >
-                <ARStudio image={userImage} onBack={() => setState('analysis')} />
+                <ARStudio image={userImage} onBack={() => setState('analysis')} onAction={showToast} />
             </motion.div>
           )}
 
@@ -367,13 +377,28 @@ export default function App() {
                key="transformation"
                initial={{ opacity: 0 }}
                animate={{ opacity: 1 }}
-               className="max-w-7xl mx-auto px-8 pb-24"
+               className="max-w-[1440px] mx-auto px-10 pb-24"
             >
-               <AIFashionShow mood={selectedMood} />
+               <AIFashionShow mood={selectedMood} onAction={showToast} />
             </motion.div>
           )}
         </AnimatePresence>
       </main>
+
+      {/* Toast Notification System */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: 50, x: '-50%' }}
+            animate={{ opacity: 1, y: 0, x: '-50%' }}
+            exit={{ opacity: 0, y: 20, x: '-50%' }}
+            className="fixed bottom-12 left-1/2 z-[100] px-6 py-3 glass-panel border-white/20 flex items-center gap-3 shadow-2xl"
+          >
+            <Bell className={cn("w-4 h-4", toast.type === 'success' ? "text-neon-green" : "text-electric-blue")} />
+            <span className="text-xs font-bold uppercase tracking-widest">{toast.message}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Footer / Status Bar */}
       <footer className="fixed bottom-0 inset-x-0 h-10 glass-panel border-x-0 border-b-0 flex items-center px-8 z-50 text-[10px] uppercase tracking-[0.5em] text-white/20">

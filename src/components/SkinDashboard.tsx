@@ -2,23 +2,45 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { SkinAnalysis } from '@/src/types';
 import { Droplets, Sparkles, Activity, Shield, Zap, Eye } from 'lucide-react';
+import { cn } from '@/src/lib/utils';
 
 interface SkinDashboardProps {
   data: SkinAnalysis;
 }
 
 export const SkinDashboard: React.FC<SkinDashboardProps> = ({ data }) => {
+  const [showFuture, setShowFuture] = React.useState(false);
+
   const metrics = [
-    { label: 'Hydration', value: data.scores.moisture, icon: Droplets, color: '#3b82f6' },
-    { label: 'Texture', value: data.scores.texture, icon: Sparkles, color: '#a855f7' },
-    { label: 'Brightness', value: data.scores.spots, icon: Zap, color: '#f59e0b' },
-    { label: 'Firmness', value: data.scores.wrinkles, icon: Activity, color: '#10b981' },
-    { label: 'Redness', value: data.scores.redness, icon: Shield, color: '#ef4444' },
-    { label: 'Dark Circles', value: data.scores.dark_circles, icon: Eye, color: '#6366f1' },
+    { label: 'Hydration', value: showFuture ? Math.min(100, data.scores.moisture + 15) : data.scores.moisture, icon: Droplets, color: '#3b82f6' },
+    { label: 'Texture', value: showFuture ? Math.min(100, data.scores.texture + 10) : data.scores.texture, icon: Sparkles, color: '#a855f7' },
+    { label: 'Brightness', value: showFuture ? Math.min(100, data.scores.spots + 12) : data.scores.spots, icon: Zap, color: '#f59e0b' },
+    { label: 'Firmness', value: showFuture ? Math.min(100, data.scores.wrinkles + 8) : data.scores.wrinkles, icon: Activity, color: '#10b981' },
+    { label: 'Redness', value: showFuture ? Math.max(0, data.scores.redness - 20) : data.scores.redness, icon: Shield, color: '#ef4444' },
+    { label: 'Dark Circles', value: showFuture ? Math.max(0, data.scores.dark_circles - 15) : data.scores.dark_circles, icon: Eye, color: '#6366f1' },
   ];
 
+  const overallScore = showFuture ? Math.min(100, data.overall_score + 10) : data.overall_score;
+
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+    <div className="space-y-6">
+      <div className="flex justify-between items-center bg-white/5 p-4 rounded-2xl border border-white/10">
+        <div className="space-y-1">
+          <h4 className="text-sm font-bold uppercase tracking-widest">Future Self Simulation</h4>
+          <p className="text-[10px] text-white/40 uppercase tracking-wider">Projected results after 4-week personalized regimen</p>
+        </div>
+        <button 
+          onClick={() => setShowFuture(!showFuture)}
+          className={cn(
+            "px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all",
+            showFuture ? "bg-neon-purple text-white" : "bg-white/10 text-white/60 hover:bg-white/20"
+          )}
+        >
+          {showFuture ? "Simulation Active" : "Preview Future"}
+        </button>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
       {metrics.map((metric, idx) => (
         <motion.div
           key={metric.label}
@@ -78,7 +100,7 @@ export const SkinDashboard: React.FC<SkinDashboardProps> = ({ data }) => {
                     strokeWidth="8"
                     strokeDasharray={440}
                     initial={{ strokeDashoffset: 440 }}
-                    animate={{ strokeDashoffset: 440 - (440 * data.overall_score) / 100 }}
+                    animate={{ strokeDashoffset: 440 - (440 * overallScore) / 100 }}
                     transition={{ duration: 2, ease: "easeOut" }}
                     strokeLinecap="round"
                 />
@@ -90,7 +112,7 @@ export const SkinDashboard: React.FC<SkinDashboardProps> = ({ data }) => {
                 </defs>
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-4xl font-bold font-display">{data.overall_score}</span>
+                <span className="text-4xl font-bold font-display">{overallScore}</span>
                 <span className="text-[10px] uppercase tracking-tighter text-white/50">Overall Score</span>
             </div>
         </div>
@@ -112,6 +134,7 @@ export const SkinDashboard: React.FC<SkinDashboardProps> = ({ data }) => {
             </div>
         </div>
       </motion.div>
+      </div>
     </div>
   );
 };

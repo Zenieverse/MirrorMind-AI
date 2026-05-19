@@ -20,7 +20,11 @@ const COLORS = [
   { name: 'Emerald', hex: '#059669' },
 ];
 
-export const ARStudio: React.FC<{ image: string; onBack: () => void }> = ({ image, onBack }) => {
+export const ARStudio: React.FC<{ 
+  image: string; 
+  onBack: () => void;
+  onAction?: (message: string, type: 'success' | 'info') => void;
+}> = ({ image, onBack, onAction }) => {
   const [selectedType, setSelectedType] = useState('lips');
   const [activeEffects, setActiveEffects] = useState<Record<string, string>>({});
   const [intensity, setIntensity] = useState(70);
@@ -30,6 +34,10 @@ export const ARStudio: React.FC<{ image: string; onBack: () => void }> = ({ imag
       ...prev,
       [type]: color
     }));
+  };
+
+  const handleRegistry = () => {
+    onAction?.('VTO Modifications Registered to Profile', 'success');
   };
 
   return (
@@ -146,7 +154,10 @@ export const ARStudio: React.FC<{ image: string; onBack: () => void }> = ({ imag
                 </div>
             </div>
 
-            <button className="w-full py-5 bg-white text-luxury-black font-black text-[10px] tracking-[0.3em] uppercase hover:bg-neon-purple hover:text-white transition-all">
+            <button 
+              onClick={handleRegistry}
+              className="w-full py-5 bg-white text-luxury-black font-black text-[10px] tracking-[0.3em] uppercase hover:bg-neon-purple hover:text-white transition-all"
+            >
                 Registry Changes
             </button>
         </div>
