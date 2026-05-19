@@ -23,8 +23,12 @@ async function startServer() {
     
     try {
       const ai = new GoogleGenAI({
-        apiKey: process.env.GEMINI_API_KEY || "",
-        httpOptions: { headers: { 'User-Agent': 'aistudio-build' } }
+        apiKey: process.env.GEMINI_API_KEY!,
+        httpOptions: {
+          headers: {
+            'User-Agent': 'aistudio-build',
+          }
+        }
       });
 
       const prompt = `
@@ -40,19 +44,18 @@ async function startServer() {
       `;
 
       const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
+        model: "gemini-2.0-flash",
         contents: prompt
       });
       
       const text = response.text || "{}";
       const cleanedJson = text.replace(/```json|```/g, "").trim();
-      
       res.json(JSON.parse(cleanedJson));
     } catch (error) {
       console.error(error);
       // Fallback data for demo mode
       res.json({
-        skinAnalysis: "Balanced undertones with slight dehydration in the T-zone.",
+        summary: "Balanced undertones with slight dehydration in the T-zone.",
         beautyPoints: ["Defined jawline", "Expressive eyes", "Radiant complexion potential"],
         futureYou: "A polished, luminous version of yourself with high-contrast features.",
         palette: ["#1a1a1a", "#7c3aed", "#ec4899"]
@@ -90,8 +93,12 @@ async function startServer() {
     
     try {
       const ai = new GoogleGenAI({
-        apiKey: process.env.GEMINI_API_KEY || "",
-        httpOptions: { headers: { 'User-Agent': 'aistudio-build' } }
+        apiKey: process.env.GEMINI_API_KEY!,
+        httpOptions: {
+          headers: {
+            'User-Agent': 'aistudio-build',
+          }
+        }
       });
 
       const prompt = `Generate a high-end fashion editorial prompt for an AI image generator. 
@@ -100,10 +107,10 @@ async function startServer() {
       Vibe: Cinematic, luxury, photorealistic, 8k, futuristic.`;
 
       const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
+        model: "gemini-2.0-flash",
         contents: prompt
       });
-      res.json({ prompt: response.text });
+      res.json({ prompt: response.text || "Cinematic luxury portrait, high fashion, professional lighting." });
     } catch (e) {
       res.json({ prompt: "Cinematic luxury portrait, high fashion, professional lighting." });
     }

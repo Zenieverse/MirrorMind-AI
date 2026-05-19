@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Sliders, X, Check, Camera, Layers, Wand2, ArrowLeft } from 'lucide-react';
+import { Sliders, X, Check, Camera, Layers, Wand2, ArrowLeft, Info, Sparkles } from 'lucide-react';
 import { cn } from '@/src/lib/utils';
+import { SkinAnalysis } from '@/src/types';
 
 const AR_TYPES = [
   { id: 'lips', label: 'Lipstick', icon: '👄' },
@@ -11,7 +12,7 @@ const AR_TYPES = [
   { id: 'earrings', label: 'Jewelry', icon: '💎' },
 ];
 
-const COLORS = [
+const DEFAULT_COLORS = [
   { name: 'Velvet Red', hex: '#991b1b' },
   { name: 'Electric Blue', hex: '#3b82f6' },
   { name: 'Neon Purple', hex: '#a855f7' },
@@ -22,12 +23,19 @@ const COLORS = [
 
 export const ARStudio: React.FC<{ 
   image: string; 
+  analysisData?: SkinAnalysis | null;
   onBack: () => void;
   onAction?: (message: string, type: 'success' | 'info') => void;
-}> = ({ image, onBack, onAction }) => {
+}> = ({ image, analysisData, onBack, onAction }) => {
   const [selectedType, setSelectedType] = useState('lips');
   const [activeEffects, setActiveEffects] = useState<Record<string, string>>({});
   const [intensity, setIntensity] = useState(70);
+
+  const suggestedColors = analysisData?.insights?.palette 
+    ? analysisData.insights.palette.map((hex, i) => ({ name: `Neural Suggestion ${i+1}`, hex }))
+    : [];
+
+  const displayColors = [...suggestedColors, ...DEFAULT_COLORS].slice(0, 9);
 
   const toggleEffect = (type: string, color: string) => {
     setActiveEffects(prev => ({
@@ -40,14 +48,41 @@ export const ARStudio: React.FC<{
     onAction?.('VTO Modifications Registered to Profile', 'success');
   };
 
+  const handleSmartRetouch = () => {
+    onAction?.('Neural Retouch Protocol Initialized...', 'info');
+    setTimeout(() => {
+        setActiveEffects({
+            lips: suggestedColors[0]?.hex || '#991b1b',
+            blush: suggestedColors[1]?.hex || '#f472b6',
+        });
+        setIntensity(40);
+        onAction?.('Aesthetic Optimization Complete', 'success');
+    }, 1500);
+  };
+
   return (
     <div className="flex flex-col lg:flex-row gap-8 h-[calc(100vh-160px)]">
       {/* Simulation Preview Area */}
       <div className="lg:w-2/3 relative rounded-[40px] overflow-hidden bg-luxury-charcoal border border-white/10 group">
         <div className="relative w-full h-full flex items-center justify-center max-w-lg aspect-square mx-auto">
-            <img src={image} alt="User" className="w-full h-full object-cover grayscale-[0.2]" />
+            {/* Background Grid Pattern */}
+            <div className="absolute inset-0 z-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle, #a855f7 1px, transparent 1px)', backgroundSize: '30px 30px' }} />
             
-            {/* AR Overlays Simulation (Simplified for visual demo) */}
+            <img src={image} alt="User" className="w-full h-full object-cover grayscale-[0.2] relative z-10" />
+            
+            {/* Neural Scanning HUD elements */}
+            <div className="absolute inset-x-8 top-12 bottom-12 flex items-center justify-center z-20 pointer-events-none">
+                <motion.div 
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
+                  className="absolute w-[120%] h-[120%] border border-white/5 rounded-full"
+                />
+                <motion.div 
+                  animate={{ rotate: -360 }}
+                  transition={{ duration: 15, repeat: Infinity, ease: 'linear' }}
+                  className="absolute w-[110%] h-[110%] border border-dashed border-white/10 rounded-full"
+                />
+            </div>
             <AnimatePresence>
                 {activeEffects['lips'] && (
                     <motion.div 
@@ -95,9 +130,18 @@ export const ARStudio: React.FC<{
         <div className="glass-card p-10 space-y-8 border-white/10">
             <div className="flex items-center justify-between">
                 <h3 className="text-[10px] tracking-[0.4em] uppercase opacity-40 font-bold">VTO Render Studio</h3>
-                <button onClick={onBack} className="p-2 hover:bg-white/10 rounded-full transition-colors">
-                    <ArrowLeft className="w-5 h-5 opacity-40" />
-                </button>
+                <div className="flex gap-2">
+                    <button 
+                        onClick={handleSmartRetouch}
+                        className="p-2 bg-neon-purple/20 text-neon-purple border border-neon-purple/30 rounded-full hover:bg-neon-purple/40 transition-colors"
+                        title="Neural Retouch"
+                    >
+                        <Wand2 className="w-4 h-4" />
+                    </button>
+                    <button onClick={onBack} className="p-2 hover:bg-white/10 rounded-full transition-colors">
+                        <ArrowLeft className="w-5 h-5 opacity-40" />
+                    </button>
+                </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
@@ -132,18 +176,29 @@ export const ARStudio: React.FC<{
             </div>
 
             <div className="space-y-4 pt-4 border-t border-white/5">
-                <p className="text-[9px] uppercase tracking-[0.2em] text-white/40">Neural Palette</p>
+                <div className="flex items-center justify-between">
+                    <p className="text-[9px] uppercase tracking-[0.2em] text-white/40">Neural Palette</p>
+                    {suggestedColors.length > 0 && (
+                        <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-neon-purple/20 border border-neon-purple/30 text-[7px] uppercase tracking-widest text-neon-purple font-black">
+                            <Sparkles className="w-2 h-2" />
+                            AI Recommended
+                        </div>
+                    )}
+                </div>
                 <div className="grid grid-cols-3 gap-3">
-                    {COLORS.map(color => (
+                    {displayColors.map((color, idx) => (
                         <button
-                            key={color.hex}
+                            key={`${color.hex}-${idx}`}
                             onClick={() => toggleEffect(selectedType, color.hex)}
                             className={cn(
-                                "h-14 rounded-xl border transition-all relative overflow-hidden",
-                                activeEffects[selectedType] === color.hex ? "border-white" : "border-transparent"
+                                "h-14 rounded-xl border transition-all relative overflow-hidden group/color",
+                                activeEffects[selectedType] === color.hex ? "border-white scale-105 shadow-[0_0_15px_rgba(255,255,255,0.2)]" : "border-white/10 hover:border-white/30"
                             )}
                         >
                             <div className="absolute inset-0" style={{ backgroundColor: color.hex }} />
+                            {idx < suggestedColors.length && (
+                                <div className="absolute top-1 right-1 w-1.5 h-1.5 bg-white rounded-full shadow-[0_0_5px_#fff]" />
+                            )}
                             {activeEffects[selectedType] === color.hex && (
                                 <div className="absolute inset-0 flex items-center justify-center bg-black/10">
                                     <Check className="w-4 h-4 text-white" />

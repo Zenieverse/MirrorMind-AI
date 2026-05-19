@@ -1,20 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Sparkles, Download, Share2, RefreshCcw, Star, Zap, ShoppingBag } from 'lucide-react';
-import { AestheticMood } from '@/src/types';
-import { PRODUCTS } from '@/src/constants';
+import { AestheticMood, SkinAnalysis } from '@/src/types';
+import { PRODUCTS, MOODS } from '@/src/constants';
 import { cn } from '@/src/lib/utils';
 
 interface AIFashionShowProps {
   mood: AestheticMood;
+  analysisData?: SkinAnalysis | null;
   userName?: string;
   onAction?: (message: string, type: 'success' | 'info') => void;
 }
 
-export const AIFashionShow: React.FC<AIFashionShowProps> = ({ mood, onAction }) => {
+export const AIFashionShow: React.FC<AIFashionShowProps> = ({ mood, analysisData, onAction }) => {
   const [isGenerating, setIsGenerating] = useState(true);
   const [previews, setPreviews] = useState<string[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [aiPrompt, setAiPrompt] = useState<string>('');
 
   const LOOK_TITLES = [
     'Volumetric Refinement',
@@ -23,17 +25,34 @@ export const AIFashionShow: React.FC<AIFashionShowProps> = ({ mood, onAction }) 
   ];
 
   useEffect(() => {
-    // Simulation of AI generation
-    const timer = setTimeout(() => {
-      setIsGenerating(false);
-      setPreviews([
-        'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&q=80&w=800',
-        'https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&q=80&w=800',
-        'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&q=80&w=800',
-      ]);
-    }, 3000);
-    return () => clearTimeout(timer);
-  }, [mood]);
+    const generateAiPrompt = async () => {
+      setIsGenerating(true);
+      try {
+        const features = analysisData?.insights?.summary || 'Standard profile';
+        const res = await fetch('/api/generate-fashion-prompt', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ mood, features })
+        });
+        const data = await res.json();
+        setAiPrompt(data.prompt);
+        
+        // Simulation of image retrieval (in a real app, you'd use the prompt to generate images)
+        setTimeout(() => {
+          setIsGenerating(false);
+          setPreviews([
+            'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&q=80&w=800',
+            'https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&q=80&w=800',
+            'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&q=80&w=800',
+          ]);
+        }, 1500);
+      } catch (e) {
+        setIsGenerating(false);
+      }
+    };
+    
+    generateAiPrompt();
+  }, [mood, analysisData]);
 
   const handlePurchase = (name: string) => {
     onAction?.(`${name} Added to Registry`, 'success');
@@ -61,10 +80,16 @@ export const AIFashionShow: React.FC<AIFashionShowProps> = ({ mood, onAction }) 
                 Synthesis Process 04 // Gallery
              </div>
              <h2 className="text-7xl font-light tracking-tighter uppercase whitespace-pre-line">
-                Progenitor Status: <br/> <span className="font-black text-neon-purple">{mood}</span>
+                Progenitor Status: <br/> <span className="font-black text-neon-purple">{MOODS.find(m => m.id === mood)?.title || mood}</span>
              </h2>
         </div>
         <div className="flex gap-4">
+            <button 
+              onClick={() => onAction?.('Lookbook Shared to Neural Network', 'success')}
+              className="w-12 h-14 glass-panel border-white/20 flex items-center justify-center hover:bg-white/10 transition-all"
+            >
+                <Share2 className="w-4 h-4 opacity-70" />
+            </button>
             <button 
               onClick={() => onAction?.('Registry Accessed', 'info')}
               className="px-8 py-4 glass-panel border-white/20 text-[10px] tracking-widest uppercase hover:bg-white/10 transition-all"
@@ -143,10 +168,17 @@ export const AIFashionShow: React.FC<AIFashionShowProps> = ({ mood, onAction }) 
                                     key={i} 
                                     onClick={() => setCurrentIndex(i)}
                                     className={cn(
-                                      "w-12 h-1 transition-all",
+                                      "w-12 h-1 transition-all relative overflow-hidden",
                                       i === currentIndex ? "bg-neon-purple w-20" : "bg-white/20 hover:bg-white/40"
                                     )}
-                                  />
+                                  >
+                                    {i === currentIndex && (
+                                      <motion.div 
+                                        layoutId="progress-indicator"
+                                        className="absolute inset-0 bg-white/20"
+                                      />
+                                    )}
+                                  </button>
                                 ))}
                              </div>
                         </div>
@@ -175,6 +207,14 @@ export const AIFashionShow: React.FC<AIFashionShowProps> = ({ mood, onAction }) 
                         <span className="text-[10px] tracking-widest uppercase opacity-40">Lighting</span>
                         <span className="text-xs font-mono uppercase tracking-tighter">Atmospheric</span>
                     </div>
+                    {aiPrompt && (
+                      <div className="space-y-2 pt-2">
+                        <span className="text-[9px] tracking-widest uppercase opacity-20">Neural Logic</span>
+                        <p className="text-[9px] leading-relaxed opacity-60 line-clamp-4 italic">
+                          {aiPrompt}
+                        </p>
+                      </div>
+                    )}
                 </div>
                 <button 
                   onClick={handleRegenerate}
@@ -186,9 +226,11 @@ export const AIFashionShow: React.FC<AIFashionShowProps> = ({ mood, onAction }) 
 
             <div className="glass-card p-10 bg-gradient-to-br from-indigo-500/5 to-transparent border-white/10">
                 <h4 className="text-[9px] tracking-[0.4em] uppercase opacity-40 mb-10 font-bold">Mirror Resonance</h4>
-                <div className="text-8xl font-black tracking-tighter text-white mb-4">9.8</div>
+                <div className="text-8xl font-black tracking-tighter text-white mb-4">
+                  {((analysisData?.overall_score || 84) / 10).toFixed(1)}
+                </div>
                 <p className="text-[10px] text-white/40 leading-relaxed uppercase tracking-widest">
-                    Exceptional alignment with core structural profile.
+                    {(analysisData?.overall_score || 84) > 90 ? 'Exceptional' : 'High'} alignment with core structural profile.
                 </p>
                 <div className="mt-12 pt-10 border-t border-white/10">
                     <button 
@@ -203,10 +245,18 @@ export const AIFashionShow: React.FC<AIFashionShowProps> = ({ mood, onAction }) 
       </div>
       
       {/* Smart Recommendations */}
-      <div className="space-y-8">
-        <div className="flex items-center justify-between">
-            <h3 className="text-2xl font-bold font-display">Curated Essentials</h3>
-            <button className="text-xs uppercase tracking-widest text-white/50 hover:text-white transition-colors">View All</button>
+      <div className="space-y-10 pt-20 border-t border-white/10">
+        <div className="flex flex-col gap-2">
+            <span className="text-[10px] tracking-[0.5em] uppercase opacity-40 font-black">Augmented Commerce</span>
+            <div className="flex items-center justify-between">
+                <h3 className="text-4xl font-light uppercase">Curated <span className="font-bold">Essentials</span></h3>
+                <button 
+                  onClick={() => onAction?.('Redirecting to Global Neural Registry', 'info')}
+                  className="text-[10px] uppercase tracking-[0.3em] text-white/40 border-b border-white/10 hover:border-white transition-all pb-1 h-fit"
+                >
+                    View All Registry
+                </button>
+            </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {PRODUCTS.map(product => (

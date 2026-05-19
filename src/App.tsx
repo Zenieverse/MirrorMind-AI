@@ -16,6 +16,7 @@ import { MoodSelector } from './components/MoodSelector.tsx';
 import { ARStudio } from './components/ARStudio.tsx';
 import { AIFashionShow } from './components/AIFashionShow.tsx';
 import { AestheticMood, SkinAnalysis } from './types.ts';
+import { MOODS } from './constants.ts';
 import { cn } from './lib/utils.ts';
 
 type AppState = 'landing' | 'scan' | 'analysis' | 'mood' | 'studio' | 'transformation';
@@ -38,27 +39,36 @@ export default function App() {
     setIsScanning(true);
     showToast('Initializing Biometric Link...', 'info');
     
-    // Simulate API call to Perfect Corp / Backend
     try {
-        const res = await fetch('/api/perfect-corp/skin-analysis', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ image })
-        });
-        const data = await res.json();
+        // Parallel fetch for Perfect Corp data and Gemini Analysis
+        const [skinRes, insightsRes] = await Promise.all([
+            fetch('/api/perfect-corp/skin-analysis', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ image })
+            }),
+            fetch('/api/analyze-look', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ image, mood: selectedMood || 'vibrant' })
+            })
+        ]);
+
+        const skinData = await skinRes.json();
+        const insights = await insightsRes.json();
         
         setTimeout(() => {
-            setAnalysisData(data);
+            setAnalysisData({ ...skinData, insights });
             setIsScanning(false);
             setState('analysis');
             showToast('Dermal Mapping Complete', 'success');
-        }, 3000);
+        }, 1500);
     } catch (e) {
         setTimeout(() => {
           setIsScanning(false);
           setState('analysis'); // Fallback to demo data
           showToast('Using Neural Proxy Baseline', 'info');
-        }, 2000);
+        }, 1000);
     }
   };
 
@@ -73,9 +83,28 @@ export default function App() {
     <div className="min-h-screen bg-luxury-black text-white selection:bg-neon-purple/30 overflow-x-hidden font-sans">
       {/* Background Ambience */}
       <div className="bg-mesh z-0">
-        <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-electric-blue rounded-full blur-[120px] opacity-30 animate-pulse" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-neon-purple rounded-full blur-[120px] opacity-30 animate-pulse" style={{ animationDelay: '2s' }} />
+        <div className="absolute inset-0 bg-[#050505]" />
+        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'linear-gradient(rgba(168, 85, 247, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(168, 85, 247, 0.1) 1px, transparent 1px)', backgroundSize: '100px 100px' }} />
+        <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-electric-blue rounded-full blur-[120px] opacity-20 animate-pulse" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-neon-purple rounded-full blur-[120px] opacity-20 animate-pulse" style={{ animationDelay: '2s' }} />
       </div>
+
+      {/* Floating HUD Elements for Landing */}
+      {state === 'landing' && (
+        <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+           <motion.div 
+             animate={{ x: [0, 50, 0], y: [0, 30, 0] }}
+             transition={{ duration: 20, repeat: Infinity }}
+             className="absolute top-1/4 left-1/4 w-px h-64 bg-gradient-to-b from-transparent via-white/20 to-transparent" 
+           />
+           <motion.div 
+             animate={{ x: [0, -40, 0], y: [0, 60, 0] }}
+             transition={{ duration: 25, repeat: Infinity }}
+             className="absolute top-1/3 right-1/4 w-px h-96 bg-gradient-to-b from-transparent via-white/10 to-transparent" 
+           />
+           <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,#050505_100%)]" />
+        </div>
+      )}
 
       {/* Persistent Navigation */}
       <AnimatePresence>
@@ -168,7 +197,10 @@ export default function App() {
                     <span className="relative z-10">Start Protocol</span>
                     <div className="absolute top-0 left-0 w-1 h-full bg-neon-purple" />
                   </button>
-                  <button className="text-[10px] tracking-[0.3em] uppercase border-b border-white/20 pb-1 hover:border-white transition-all opacity-60 hover:opacity-100">
+                  <button 
+                    onClick={() => showToast('Neural Archive: Demo Database Accessed', 'info')}
+                    className="text-[10px] tracking-[0.3em] uppercase border-b border-white/20 pb-1 hover:border-white transition-all opacity-60 hover:opacity-100"
+                  >
                     Neural Archive
                   </button>
                 </motion.div>
@@ -214,9 +246,9 @@ export default function App() {
               key="analysis"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="max-w-[1440px] mx-auto px-10 pb-20 pt-8"
+              className="max-w-[1440px] mx-auto px-10 pb-20 pt-8 space-y-12"
             >
-               <div className="grid grid-cols-1 md:grid-cols-12 gap-8 h-full">
+               <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
                     {/* Left Sidebar: Analysis */}
                     <div className="md:col-span-3 space-y-6 flex flex-col">
                         <div className="glass-card p-8 flex-1 flex flex-col gap-8">
@@ -238,10 +270,23 @@ export default function App() {
                                 </div>
                             </div>
                             
-                            <div className="mt-8">
+                            <div className="mt-8 space-y-4">
                                 <p className="text-[11px] leading-relaxed opacity-60 italic tracking-wide font-light">
-                                    "Neural profile optimized for {selectedMood || 'minimalist'} finish. Structure suggests potential for high-contrast highlighting."
+                                    "{analysisData.insights?.summary || `Neural profile optimized for ${MOODS.find(m => m.id === selectedMood)?.title || 'strategic'} finish. Structure suggests potential for high-contrast highlighting.`}"
                                 </p>
+                                
+                                {analysisData.insights?.palette && (
+                                    <div className="flex gap-2 pt-4">
+                                        {analysisData.insights.palette.map(color => (
+                                            <div 
+                                                key={color} 
+                                                className="w-4 h-4 rounded-full border border-white/10" 
+                                                style={{ backgroundColor: color }}
+                                                title={color}
+                                            />
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                             
                             <button 
@@ -254,7 +299,7 @@ export default function App() {
                     </div>
 
                     {/* Center: Hero Image / Scan Preview */}
-                    <div className="md:col-span-6 relative aspect-[3/4] md:aspect-auto rounded-[40px] overflow-hidden bg-luxury-charcoal border border-white/10 group">
+                    <div className="md:col-span-6 relative aspect-[3/4] rounded-[40px] overflow-hidden bg-luxury-charcoal border border-white/10 group">
                          {userImage && <img src={userImage} alt="User Scan" className="w-full h-full object-cover grayscale-[0.3] brightness-125" />}
                          <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-luxury-black/80 to-transparent pointer-events-none" />
                          
@@ -269,17 +314,29 @@ export default function App() {
                          </div>
                          
                          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-6 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button className="w-12 h-12 rounded-full glass-panel flex items-center justify-center hover:scale-110 transition-transform">
-                                <Scan className="w-5 h-5" />
+                            <button 
+                                onClick={() => {
+                                  setState('scan');
+                                  showToast('Re-initializing Optical Sensors', 'info');
+                                }}
+                                className="w-12 h-12 rounded-full glass-panel flex items-center justify-center hover:scale-110 transition-transform group/btn"
+                            >
+                                <Scan className="w-5 h-5 group-hover/btn:text-neon-purple transition-colors" />
                             </button>
                             <button 
                                 onClick={() => setState('studio')}
-                                className="px-8 py-3 bg-neon-purple text-white text-[10px] tracking-[0.3em] font-black uppercase rounded-full hover:scale-105 transition-transform"
+                                className="px-8 py-3 bg-neon-purple text-white text-[10px] tracking-[0.3em] font-black uppercase rounded-full hover:scale-105 transition-transform shadow-[0_0_20px_rgba(168,85,247,0.4)]"
                             >
                                 Open Studio
                             </button>
                          </div>
                          
+                         {/* Hud Corner Brackets */}
+                         <div className="absolute top-4 left-4 w-6 h-6 border-t border-l border-white/20" />
+                         <div className="absolute top-4 right-4 w-6 h-6 border-t border-r border-white/20" />
+                         <div className="absolute bottom-4 left-4 w-6 h-6 border-b border-l border-white/20" />
+                         <div className="absolute bottom-4 right-4 w-6 h-6 border-b border-r border-white/20" />
+
                          {/* Scan Line Animation */}
                          <div className="absolute inset-x-0 top-1/4 h-px bg-neon-purple/50 shadow-[0_0_20px_#a855f7] animate-scan pointer-events-none" />
                     </div>
@@ -295,18 +352,27 @@ export default function App() {
                                         cx="64" cy="64" r="60" stroke="currentColor" strokeWidth="4" fill="transparent" 
                                         strokeDasharray="377" 
                                         initial={{ strokeDashoffset: 377 }}
-                                        animate={{ strokeDashoffset: 377 - (377 * 84) / 100 }}
+                                        animate={{ strokeDashoffset: 377 - (377 * (analysisData?.overall_score || 84)) / 100 }}
                                         transition={{ duration: 2 }}
                                         className="text-neon-purple" 
                                     />
                                 </svg>
                                 <div className="flex flex-col items-center">
-                                    <span className="text-5xl font-black tracking-tighter">84</span>
+                                    <span className="text-5xl font-black tracking-tighter">{analysisData?.overall_score || 84}</span>
                                     <span className="text-[9px] opacity-40 uppercase tracking-widest mt-1">Mirror Score</span>
                                 </div>
                              </div>
                              <p className="text-[10px] text-center opacity-40 tracking-wider">Top 12% in current demographic link.</p>
                         </div>
+
+                        {analysisData.insights?.futureYou && (
+                          <div className="glass-card p-8 bg-gradient-to-br from-neon-purple/10 to-transparent border-neon-purple/20">
+                               <h4 className="text-[10px] tracking-[0.4em] uppercase opacity-40 mb-6 font-bold">Identity Projection</h4>
+                               <p className="text-[11px] leading-relaxed font-medium">
+                                 {analysisData.insights.futureYou}
+                               </p>
+                          </div>
+                        )}
                         
                         <div className="glass-card p-8 flex-1">
                              <h4 className="text-[10px] tracking-[0.4em] uppercase opacity-40 mb-6 font-bold">Bundle Matches</h4>
@@ -335,6 +401,15 @@ export default function App() {
                         </div>
                     </div>
                </div>
+
+               {/* Bio-Detailed Section using SkinDashboard */}
+               <div className="space-y-8 pt-12 border-t border-white/10">
+                  <div className="flex flex-col gap-2">
+                    <span className="text-[10px] tracking-[0.5em] uppercase opacity-40 font-black">Bio-Metrics</span>
+                    <h3 className="text-4xl font-light uppercase">Atmospheric <span className="font-bold">Diagnostics</span></h3>
+                  </div>
+                  <SkinDashboard data={analysisData} />
+               </div>
             </motion.div>
           )}
 
@@ -346,9 +421,12 @@ export default function App() {
                className="max-w-7xl mx-auto px-8 pb-24 space-y-12"
             >
                 <div className="text-center space-y-4">
-                    <h2 className="text-6xl font-bold font-display">Choose Aesthetic</h2>
-                    <p className="text-white/50 text-lg max-w-2xl mx-auto">
-                        How do you want the world to see you today? Select a core mood to initialize your identity synthesis.
+                    <div className="text-[10px] tracking-[0.5em] uppercase opacity-40 font-black">Selection Phase</div>
+                    <h2 className="text-6xl font-light tracking-tighter uppercase whitespace-pre-line">
+                        Select Core <br/> <span className="font-black text-neon-purple">Aesthetic</span>
+                    </h2>
+                    <p className="text-white/40 text-[10px] tracking-widest uppercase max-w-xl mx-auto">
+                        Our AI will re-synthesize your form based on the chosen visual DNA.
                     </p>
                 </div>
                 <MoodSelector 
@@ -368,7 +446,7 @@ export default function App() {
                 animate={{ opacity: 1, y: 0 }}
                 className="max-w-[1440px] mx-auto px-10 pb-24"
             >
-                <ARStudio image={userImage} onBack={() => setState('analysis')} onAction={showToast} />
+                <ARStudio image={userImage} analysisData={analysisData} onBack={() => setState('analysis')} onAction={showToast} />
             </motion.div>
           )}
 
@@ -379,7 +457,11 @@ export default function App() {
                animate={{ opacity: 1 }}
                className="max-w-[1440px] mx-auto px-10 pb-24"
             >
-               <AIFashionShow mood={selectedMood} onAction={showToast} />
+               <AIFashionShow 
+                 mood={selectedMood} 
+                 analysisData={analysisData}
+                 onAction={showToast} 
+               />
             </motion.div>
           )}
         </AnimatePresence>

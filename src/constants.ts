@@ -53,7 +53,7 @@ export const PRODUCTS = [
     type: 'skincare',
     matchScore: 98,
     description: 'Intense hydration with micro-algae spheres.',
-    image: 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&q=80&w=200'
+    image: 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&q=80&w=400'
   },
   {
     id: '2',
@@ -62,6 +62,24 @@ export const PRODUCTS = [
     type: 'makeup',
     matchScore: 94,
     description: 'Weightless pigment that adapts to your undertones.',
-    image: 'https://images.unsplash.com/photo-1586776977607-310e9c725c37?auto=format&fit=crop&q=80&w=200'
+    image: 'https://images.unsplash.com/photo-1586776977607-310e9c725c37?auto=format&fit=crop&q=80&w=400'
+  },
+  {
+    id: '3',
+    name: 'Luminous Setting Spray',
+    brand: 'Arise Cosmetics',
+    type: 'skincare',
+    matchScore: 89,
+    description: '24-hour hold with a pearlized finish.',
+    image: 'https://images.unsplash.com/photo-1596462502278-27bfdc4033c8?auto=format&fit=crop&q=80&w=400'
+  },
+  {
+    id: '4',
+    name: 'Neural Brow Fix',
+    brand: 'Arch Systems',
+    type: 'makeup',
+    matchScore: 92,
+    description: 'Bionic fibers for structural enhancement.',
+    image: 'https://images.unsplash.com/photo-1541099649105-f69ad21f3246?auto=format&fit=crop&q=80&w=400'
   }
 ];

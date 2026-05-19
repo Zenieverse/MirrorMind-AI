@@ -8,6 +8,13 @@ export type AestheticMood =
   | 'Old Money'
   | 'Vacation Glow';
 
+export interface AIInsights {
+  summary: string;
+  beautyPoints: string[];
+  futureYou: string;
+  palette: string[];
+}
+
 export interface SkinAnalysis {
   age: number;
   scores: {
@@ -20,6 +27,7 @@ export interface SkinAnalysis {
     moisture: number;
   };
   overall_score: number;
+  insights?: AIInsights;
 }
 
 export interface Recommendation {

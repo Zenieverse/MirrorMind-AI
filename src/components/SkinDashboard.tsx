@@ -120,7 +120,7 @@ export const SkinDashboard: React.FC<SkinDashboardProps> = ({ data }) => {
         <div className="flex-1 space-y-4">
             <h4 className="text-xl font-medium font-display">AI Skin Insight</h4>
             <p className="text-white/70 leading-relaxed italic">
-                "Your dermal profile suggests exceptional texture quality. Focus on moisture retention in the eye contour area to boost your overall luminosity score by 12 points."
+                "{data.insights?.summary || "Your dermal profile suggests exceptional texture quality. Focus on moisture retention in the eye contour area to boost your overall luminosity score."}"
             </p>
             <div className="flex gap-4">
                 <div className="flex items-center gap-2 text-xs text-white/40">
