@@ -7,6 +7,7 @@
 This contains everything you need to run your app locally.
 
 View your app in AI Studio: https://ai.studio/apps/5e4cd35e-dc5d-4618-b8a0-fe5568dafa7f
+or https://mirrormind-ai-764082783379.us-west1.run.app
 
 ## Run Locally
 
